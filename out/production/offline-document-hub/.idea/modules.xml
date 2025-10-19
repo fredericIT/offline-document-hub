@@ -2,11 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-<<<<<<< HEAD
-      <module fileurl="file://$PROJECT_DIR$/landingpage.iml" filepath="$PROJECT_DIR$/landingpage.iml" />
-=======
       <module fileurl="file://$PROJECT_DIR$/.idea/offline-document-hub.iml" filepath="$PROJECT_DIR$/.idea/offline-document-hub.iml" />
->>>>>>> 3c1bbfe71c28fab48ece2a6f4e5030890cc21828
     </modules>
   </component>
 </project>

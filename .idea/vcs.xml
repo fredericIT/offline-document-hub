@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="VcsDirectoryMappings">
+<<<<<<< HEAD
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/offline-document-hub" vcs="Git" />
+=======
+    <mapping directory="" vcs="Git" />
+>>>>>>> 3c1bbfe71c28fab48ece2a6f4e5030890cc21828
   </component>
 </project>
