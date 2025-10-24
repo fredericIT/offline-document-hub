@@ -2,13 +2,9 @@
 <module type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-<<<<<<< HEAD
-    <content url="file://$MODULE_DIR$" />
-=======
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
     </content>
->>>>>>> a112c55a61cf29bf22e1ba02171d58766a62cf68
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
