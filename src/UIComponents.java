@@ -4,136 +4,146 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class UIComponents {
-    public static final Color DARK_GREEN = new Color(34, 139, 34);
-    public static final Color DARK_GREY = new Color(45, 45, 45);
-    public static final Color CARD_BG = new Color(60, 60, 60);
-    public static final Color LIGHT_TEXT = Color.WHITE;
-    public static final Color PLACEHOLDER = Color.GRAY;
+    public static final Color PRIMARY_BLUE = new Color(66, 133, 244);
+    public static final Color DARK_TEXT = new Color(32, 33, 36);
+    public static final Color LIGHT_TEXT = new Color(95, 99, 104);
+    public static final Color BORDER_COLOR = new Color(218, 220, 224);
+    public static final Color HOVER_BG = new Color(248, 250, 255);
 
-    // Styled button used across the app
-    public static JButton styledButton(String text) {
+    // Google Drive styled button
+    public static JButton createDriveButton(String text) {
         JButton button = new JButton(text);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        button.setBackground(DARK_GREEN);
-        button.setForeground(LIGHT_TEXT);
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        button.setBackground(Color.WHITE);
+        button.setForeground(DARK_TEXT);
+        button.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(8, 16, 8, 16)
+        ));
         button.setFocusPainted(false);
-        button.setBorder(new EmptyBorder(8, 16, 8, 16));
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        button.setOpaque(true);
 
         button.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(0, 128, 0));
+                button.setBackground(HOVER_BG);
+                button.setBorder(BorderFactory.createCompoundBorder(
+                        new LineBorder(PRIMARY_BLUE, 1),
+                        new EmptyBorder(8, 16, 8, 16)
+                ));
             }
             public void mouseExited(MouseEvent e) {
-                button.setBackground(DARK_GREEN);
+                button.setBackground(Color.WHITE);
+                button.setBorder(BorderFactory.createCompoundBorder(
+                        new LineBorder(BORDER_COLOR, 1),
+                        new EmptyBorder(8, 16, 8, 16)
+                ));
             }
         });
 
         return button;
     }
 
-    // Create a placeholder text field
-    public static PlaceholderTextField createTextField(String placeholder, int columns) {
-        return new PlaceholderTextField(placeholder, columns);
+    // Primary action button
+    public static JButton createPrimaryButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        button.setBackground(PRIMARY_BLUE);
+        button.setForeground(Color.WHITE);
+        button.setBorder(new EmptyBorder(10, 24, 10, 24));
+        button.setFocusPainted(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(new Color(53, 122, 232));
+            }
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(PRIMARY_BLUE);
+            }
+        });
+
+        return button;
     }
 
-    // Create a placeholder password field
-    public static PlaceholderPasswordField createPasswordField(String placeholder, int columns) {
-        return new PlaceholderPasswordField(placeholder, columns);
-    }
+    // Google Drive styled text field
+    public static JTextField createDriveTextField(String placeholder, int columns) {
+        JTextField field = new JTextField(columns);
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(10, 12, 10, 12)
+        ));
+        field.setBackground(Color.WHITE);
 
-    // ========== PlaceholderTextField ==========
-    public static class PlaceholderTextField extends JTextField {
-        private final String placeholder;
-        private boolean showingPlaceholder = true;
+        if (placeholder != null) {
+            field.setText(placeholder);
+            field.setForeground(LIGHT_TEXT);
 
-        public PlaceholderTextField(String placeholder, int columns) {
-            super(placeholder, columns);
-            this.placeholder = placeholder;
-            init();
-        }
-
-        private void init() {
-            setForeground(PLACEHOLDER);
-            setBackground(CARD_BG);
-            setCaretColor(LIGHT_TEXT);
-            setBorder(new CompoundBorder(new LineBorder(DARK_GREEN, 1, true),
-                    new EmptyBorder(6, 10, 6, 10)));
-
-            addFocusListener(new FocusAdapter() {
+            field.addFocusListener(new FocusAdapter() {
                 public void focusGained(FocusEvent e) {
-                    if (showingPlaceholder) {
-                        setText("");
-                        setForeground(LIGHT_TEXT);
-                        showingPlaceholder = false;
+                    if (field.getText().equals(placeholder)) {
+                        field.setText("");
+                        field.setForeground(DARK_TEXT);
                     }
                 }
 
                 public void focusLost(FocusEvent e) {
-                    if (getText().isEmpty()) {
-                        setText(placeholder);
-                        setForeground(PLACEHOLDER);
-                        showingPlaceholder = true;
+                    if (field.getText().isEmpty()) {
+                        field.setText(placeholder);
+                        field.setForeground(LIGHT_TEXT);
                     }
                 }
             });
         }
 
-        // returns actual user input ("" if placeholder shown)
-        public String getRealText() {
-            return showingPlaceholder ? "" : getText();
-        }
+        return field;
     }
 
-    // ========== PlaceholderPasswordField ==========
-    public static class PlaceholderPasswordField extends JPasswordField {
-        private final String placeholder;
-        private boolean showingPlaceholder = true;
-        private char defaultEcho;
+    // Google Drive styled password field
+    public static JPasswordField createDrivePasswordField(String placeholder, int columns) {
+        JPasswordField field = new JPasswordField(columns);
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(10, 12, 10, 12)
+        ));
+        field.setBackground(Color.WHITE);
+        field.setEchoChar((char) 0); // Show placeholder text
 
-        public PlaceholderPasswordField(String placeholder, int columns) {
-            super(placeholder, columns);
-            this.placeholder = placeholder;
-            init();
-        }
+        if (placeholder != null) {
+            field.setText(placeholder);
+            field.setForeground(LIGHT_TEXT);
 
-        private void init() {
-            // store default echo; if it's 0, fallback to '*'
-            defaultEcho = getEchoChar();
-            if (defaultEcho == 0) defaultEcho = '*';
-
-            setForeground(PLACEHOLDER);
-            setBackground(CARD_BG);
-            setCaretColor(LIGHT_TEXT);
-            setEchoChar((char) 0); // show placeholder text
-            setBorder(new CompoundBorder(new LineBorder(DARK_GREEN, 1, true),
-                    new EmptyBorder(6, 10, 6, 10)));
-
-            addFocusListener(new FocusAdapter() {
+            field.addFocusListener(new FocusAdapter() {
                 public void focusGained(FocusEvent e) {
-                    if (showingPlaceholder) {
-                        setText("");
-                        setForeground(LIGHT_TEXT);
-                        setEchoChar(defaultEcho);
-                        showingPlaceholder = false;
+                    if (String.valueOf(field.getPassword()).equals(placeholder)) {
+                        field.setText("");
+                        field.setForeground(DARK_TEXT);
+                        field.setEchoChar('•');
                     }
                 }
 
                 public void focusLost(FocusEvent e) {
-                    if (getPassword().length == 0) {
-                        setText(placeholder);
-                        setForeground(PLACEHOLDER);
-                        setEchoChar((char) 0);
-                        showingPlaceholder = true;
+                    if (field.getPassword().length == 0) {
+                        field.setText(placeholder);
+                        field.setForeground(LIGHT_TEXT);
+                        field.setEchoChar((char) 0);
                     }
                 }
             });
         }
 
-        // returns actual password as String ("" if placeholder shown)
-        public String getRealPassword() {
-            return showingPlaceholder ? "" : new String(getPassword());
-        }
+        return field;
+    }
+
+    // Card panel for content
+    public static JPanel createCardPanel() {
+        JPanel card = new JPanel();
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(BORDER_COLOR, 1),
+                new EmptyBorder(20, 20, 20, 20)
+        ));
+        return card;
     }
 }

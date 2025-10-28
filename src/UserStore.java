@@ -1,5 +1,7 @@
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 public class UserStore {
     private static final Map<String, String> users = new ConcurrentHashMap<>();
@@ -62,7 +64,7 @@ public class UserStore {
     }
 
     // NEW: Get all usernames for notification system
-    public static java.util.Set<String> getAllUsernames() {
-        return new java.util.HashSet<>(users.keySet());
+    public static Set<String> getAllUsernames() {
+        return new HashSet<>(users.keySet());
     }
 }
