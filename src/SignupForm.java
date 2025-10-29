@@ -4,137 +4,91 @@ import java.awt.*;
 public class SignupForm {
 
     public void show() {
-        final JFrame frame = new JFrame("Create account - DriveClone");
+        final JFrame frame = new JFrame("Create Account - Offline Document Hub");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(450, 550);
+        frame.setSize(500, 420);
         frame.setLocationRelativeTo(null);
         frame.setResizable(false);
 
-        JPanel root = new JPanel(new BorderLayout());
-        root.setBackground(Color.WHITE);
+        JPanel root = new JPanel(new GridBagLayout());
+        root.setBackground(UIComponents.DARK_GREY);
 
-        // Header
-        JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(Color.WHITE);
-        header.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        JPanel card = new JPanel();
+        card.setBackground(UIComponents.CARD_BG);
+        card.setBorder(BorderFactory.createEmptyBorder(24, 28, 24, 28));
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setPreferredSize(new Dimension(380, 320));
 
-        JButton backBtn = new JButton("←");
-        backBtn.setFont(new Font("Segoe UI", Font.PLAIN, 18));
-        backBtn.setBackground(Color.WHITE);
-        backBtn.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-        backBtn.setFocusPainted(false);
+        JLabel heading = new JLabel("📝 Create Account");
+        heading.setForeground(UIComponents.LIGHT_TEXT);
+        heading.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        heading.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel title = new JLabel("DriveClone");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        title.setForeground(UIComponents.PRIMARY_BLUE);
+        JLabel sub = new JLabel("Pick a username and password", SwingConstants.CENTER);
+        sub.setForeground(Color.LIGHT_GRAY);
+        sub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        sub.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        header.add(backBtn, BorderLayout.WEST);
-        header.add(title, BorderLayout.CENTER);
+        UIComponents.PlaceholderTextField userField = UIComponents.createTextField("Username", 20);
+        userField.setMaximumSize(new Dimension(320, 36));
+        userField.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Signup Form
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
-        formPanel.setBackground(Color.WHITE);
-        formPanel.setBorder(BorderFactory.createEmptyBorder(40, 50, 40, 50));
+        UIComponents.PlaceholderPasswordField passField = UIComponents.createPasswordField("Password", 20);
+        passField.setMaximumSize(new Dimension(320, 36));
+        passField.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel formTitle = new JLabel("Create your account");
-        formTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        formTitle.setForeground(UIComponents.DARK_TEXT);
-        formTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        UIComponents.PlaceholderPasswordField confirmField = UIComponents.createPasswordField("Confirm Password", 20);
+        confirmField.setMaximumSize(new Dimension(320, 36));
+        confirmField.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel formSubtitle = new JLabel("Continue to DriveClone");
-        formSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        formSubtitle.setForeground(UIComponents.LIGHT_TEXT);
-        formSubtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JPanel btnRow = new JPanel();
+        btnRow.setBackground(UIComponents.CARD_BG);
+        JButton back = UIComponents.styledButton("Back");
+        JButton signup = UIComponents.styledButton("Sign Up");
+        btnRow.add(back);
+        btnRow.add(signup);
 
-        JTextField usernameField = UIComponents.createDriveTextField("Choose a username", 20);
-        usernameField.setMaximumSize(new Dimension(400, 45));
-        usernameField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.add(heading);
+        card.add(Box.createVerticalStrut(8));
+        card.add(sub);
+        card.add(Box.createVerticalStrut(18));
+        card.add(userField);
+        card.add(Box.createVerticalStrut(12));
+        card.add(passField);
+        card.add(Box.createVerticalStrut(12));
+        card.add(confirmField);
+        card.add(Box.createVerticalStrut(18));
+        card.add(btnRow);
 
-        JPasswordField passwordField = UIComponents.createDrivePasswordField("Create a password", 20);
-        passwordField.setMaximumSize(new Dimension(400, 45));
-        passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JPasswordField confirmField = UIComponents.createDrivePasswordField("Confirm your password", 20);
-        confirmField.setMaximumSize(new Dimension(400, 45));
-        confirmField.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JButton signupBtn = UIComponents.createPrimaryButton("Create account");
-        signupBtn.setMaximumSize(new Dimension(400, 45));
-        signupBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JPanel altAuth = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        altAuth.setBackground(Color.WHITE);
-        JLabel loginLink = new JLabel("<html><u>Sign in</u></html>");
-        loginLink.setForeground(UIComponents.PRIMARY_BLUE);
-        loginLink.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        altAuth.add(new JLabel("Already have an account?"));
-        altAuth.add(loginLink);
-
-        formPanel.add(formTitle);
-        formPanel.add(Box.createVerticalStrut(5));
-        formPanel.add(formSubtitle);
-        formPanel.add(Box.createVerticalStrut(30));
-        formPanel.add(new JLabel("Username"));
-        formPanel.add(Box.createVerticalStrut(8));
-        formPanel.add(usernameField);
-        formPanel.add(Box.createVerticalStrut(20));
-        formPanel.add(new JLabel("Password"));
-        formPanel.add(Box.createVerticalStrut(8));
-        formPanel.add(passwordField);
-        formPanel.add(Box.createVerticalStrut(20));
-        formPanel.add(new JLabel("Confirm Password"));
-        formPanel.add(Box.createVerticalStrut(8));
-        formPanel.add(confirmField);
-        formPanel.add(Box.createVerticalStrut(30));
-        formPanel.add(signupBtn);
-        formPanel.add(Box.createVerticalStrut(20));
-        formPanel.add(altAuth);
-
-        root.add(header, BorderLayout.NORTH);
-        root.add(formPanel, BorderLayout.CENTER);
-
+        root.add(card);
         frame.setContentPane(root);
 
-        // Action listeners
-        backBtn.addActionListener(e -> {
+        back.addActionListener(e -> {
             frame.dispose();
             new LandingPage().show();
         });
 
-        signupBtn.addActionListener(e -> {
-            String username = usernameField.getText();
-            String password = new String(passwordField.getPassword());
-            String confirm = new String(confirmField.getPassword());
+        signup.addActionListener(e -> {
+            String username = userField.getRealText();
+            String password = passField.getRealPassword();
+            String confirm = confirmField.getRealPassword();
 
-            if (username.isEmpty() || username.equals("Choose a username") ||
-                    password.isEmpty() || password.equals("Create a password") ||
-                    confirm.isEmpty() || confirm.equals("Confirm your password")) {
-                JOptionPane.showMessageDialog(frame, "Please complete all fields", "Missing Information", JOptionPane.WARNING_MESSAGE);
+            if (username.isEmpty() || password.isEmpty() || confirm.isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "Please complete all fields", "Missing", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-
             if (!password.equals(confirm)) {
-                JOptionPane.showMessageDialog(frame, "Passwords do not match", "Password Mismatch", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(frame, "Passwords do not match", "Mismatch", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-
             boolean added = UserStore.addUser(username, password);
             if (!added) {
-                JOptionPane.showMessageDialog(frame, "Username already taken. Please choose another.", "Username Unavailable", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(frame, "Username already taken", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
-            JOptionPane.showMessageDialog(frame, "Account created successfully! You can now sign in.", "Account Created", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(frame, "Account created — you may now log in", "Success", JOptionPane.INFORMATION_MESSAGE);
             frame.dispose();
             new LoginForm().show();
-        });
-
-        loginLink.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                frame.dispose();
-                new LoginForm().show();
-            }
         });
 
         frame.setVisible(true);

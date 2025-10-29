@@ -1,70 +1,126 @@
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
+import java.io.*;
+import java.util.*;
 
 public class UserStore {
-    private static final Map<String, String> users = new ConcurrentHashMap<>();
-    private static final Map<String, String> userRoles = new ConcurrentHashMap<>();
-    private static final Map<String, Long> userStorage = new ConcurrentHashMap<>();
-    private static final long DEFAULT_STORAGE_LIMIT = 16 * 1024 * 1024 * 1024L; // 16GB in bytes
+    private static final String DATA_ROOT = "./data";
+    private static final String USERS_FILE = DATA_ROOT + "/users.txt";
+    private static final long MAX_STORAGE_BYTES = 16L * 1024 * 1024 * 1024; // 16GB per user
+    private static Map<String, String> users = new HashMap<>();
+    private static boolean loaded = false;
 
     static {
-        // sample default accounts
-        users.put("admin", "admin");
-        users.put("client1", "client1");
-        users.put("client2", "client2");
-
-        // roles: "admin" or "client"
-        userRoles.put("admin", "admin");
-        userRoles.put("client1", "client");
-        userRoles.put("client2", "client");
-
-        // initialize storage
-        userStorage.put("admin", DEFAULT_STORAGE_LIMIT);
-        userStorage.put("client1", DEFAULT_STORAGE_LIMIT);
-        userStorage.put("client2", DEFAULT_STORAGE_LIMIT);
+        loadUsers();
     }
 
-    // returns true if user added successfully, false if username exists
-    public static synchronized boolean addUser(String username, String password) {
-        if (username == null || username.isEmpty() || password == null) return false;
-        if (users.containsKey(username)) return false;
+    private static void ensureDir(String path) {
+        File f = new File(path);
+        if (!f.exists()) f.mkdirs();
+    }
+
+    private static void loadUsers() {
+        if (loaded) return;
+
+        users.clear();
+        ensureDir(DATA_ROOT);
+        File file = new File(USERS_FILE);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+                // Add default admin user
+                users.put("admin", "admin");
+                saveUsers();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            loaded = true;
+            return;
+        }
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(":");
+                if (parts.length == 2) {
+                    users.put(parts[0], parts[1]);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        loaded = true;
+    }
+
+    private static void saveUsers() {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(USERS_FILE))) {
+            for (Map.Entry<String, String> entry : users.entrySet()) {
+                bw.write(entry.getKey() + ":" + entry.getValue());
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static boolean addUser(String username, String password) {
+        loadUsers();
+        if (users.containsKey(username)) {
+            return false;
+        }
         users.put(username, password);
-        userRoles.put(username, "client"); // default role is client
-        userStorage.put(username, DEFAULT_STORAGE_LIMIT);
+        saveUsers();
+
+        // Create user directory
+        File userDir = new File(DATA_ROOT + "/" + username + "/files");
+        if (!userDir.exists()) userDir.mkdirs();
+
         return true;
     }
 
     public static boolean validateUser(String username, String password) {
-        if (username == null || password == null) return false;
-        return password.equals(users.get(username));
+        loadUsers();
+        return users.containsKey(username) && users.get(username).equals(password);
     }
 
-    public static String getUserRole(String username) {
-        return userRoles.get(username);
-    }
-
-    public static long getUserStorageLimit(String username) {
-        return userStorage.getOrDefault(username, DEFAULT_STORAGE_LIMIT);
-    }
-
-    public static long getUsedStorage(String username) {
-        // In a real implementation, this would calculate actual used storage
-        // For now, return a mock value
-        return 2 * 1024 * 1024 * 1024L; // 2GB used
-    }
-
-    public static long getAvailableStorage(String username) {
-        return getUserStorageLimit(username) - getUsedStorage(username);
+    public static java.util.List<String> getAllUsernames() {
+        loadUsers();
+        return new ArrayList<>(users.keySet());
     }
 
     public static boolean isAdmin(String username) {
-        return "admin".equals(getUserRole(username));
+        return "admin".equals(username);
     }
 
-    // NEW: Get all usernames for notification system
-    public static Set<String> getAllUsernames() {
-        return new HashSet<>(users.keySet());
+    public static long getAvailableStorage(String username) {
+        File userDir = new File(DATA_ROOT + "/" + username + "/files");
+        if (!userDir.exists()) {
+            return MAX_STORAGE_BYTES;
+        }
+        long used = getDirectorySize(userDir);
+        return Math.max(0, MAX_STORAGE_BYTES - used);
+    }
+
+    public static long getUsedStorage(String username) {
+        File userDir = new File(DATA_ROOT + "/" + username + "/files");
+        if (!userDir.exists()) return 0;
+        return getDirectorySize(userDir);
+    }
+
+    public static long getUserStorageLimit(String username) {
+        return MAX_STORAGE_BYTES;
+    }
+
+    private static long getDirectorySize(File dir) {
+        long size = 0;
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    size += file.length();
+                } else if (file.isDirectory()) {
+                    size += getDirectorySize(file);
+                }
+            }
+        }
+        return size;
     }
 }
