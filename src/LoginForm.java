@@ -72,6 +72,9 @@ public class LoginForm {
             }
 
             if (UserStore.validateUser(username, password)) {
+                // Set the current user
+                UserStore.setCurrentUser(username);
+
                 JOptionPane.showMessageDialog(frame, "Login successful!", "Success",
                         JOptionPane.INFORMATION_MESSAGE);
                 frame.dispose();

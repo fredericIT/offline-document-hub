@@ -7,11 +7,22 @@ public class UserStore {
     private static final long MAX_STORAGE_BYTES = 16L * 1024 * 1024 * 1024; // 16GB per user
     private static Map<String, String> users = new HashMap<>();
     private static boolean loaded = false;
+    private static String currentUser = null; // Track current user
 
     static {
         loadUsers();
     }
 
+    // Add this missing method
+    public static String getCurrentUser() {
+        return currentUser;
+    }
+
+    public static void setCurrentUser(String username) {
+        currentUser = username;
+    }
+
+    // Rest of the existing UserStore code remains the same...
     private static void ensureDir(String path) {
         File f = new File(path);
         if (!f.exists()) f.mkdirs();
