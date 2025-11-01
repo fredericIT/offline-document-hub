@@ -1,87 +1,83 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 
 public class LoginForm {
-    private JFrame frame;
-    private JTextField usernameField;
-    private JPasswordField passwordField;
 
     public void show() {
-        frame = new JFrame("Offline Document Hub - Login");
+        final JFrame frame = new JFrame("Login - Offline Document Hub");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400, 300);
+        frame.setSize(460, 380);
         frame.setLocationRelativeTo(null);
         frame.setResizable(false);
 
-        JPanel mainPanel = new JPanel(new GridBagLayout());
-        mainPanel.setBackground(UIComponents.DARK_GREY);
+        JPanel root = new JPanel(new GridBagLayout());
+        root.setBackground(UIComponents.DARK_GREY);
 
-        JPanel loginPanel = new JPanel();
-        loginPanel.setLayout(new BoxLayout(loginPanel, BoxLayout.Y_AXIS));
-        loginPanel.setBackground(UIComponents.CARD_BG);
-        loginPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        loginPanel.setPreferredSize(new Dimension(300, 200));
+        JPanel card = new JPanel();
+        card.setBackground(UIComponents.CARD_BG);
+        card.setBorder(BorderFactory.createEmptyBorder(24, 28, 24, 28));
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setPreferredSize(new Dimension(360, 280));
 
-        JLabel titleLabel = new JLabel("🔑 Login to Document Hub");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titleLabel.setForeground(UIComponents.LIGHT_TEXT);
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel heading = new JLabel("🔑 Login");
+        heading.setForeground(UIComponents.LIGHT_TEXT);
+        heading.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        heading.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        UIComponents.PlaceholderTextField userField = UIComponents.createTextField("Username", 15);
-        userField.setMaximumSize(new Dimension(250, 35));
+        JLabel sub = new JLabel("Enter your username and password", SwingConstants.CENTER);
+        sub.setForeground(Color.LIGHT_GRAY);
+        sub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        sub.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        UIComponents.PlaceholderTextField userField = UIComponents.createTextField("Username", 20);
+        userField.setMaximumSize(new Dimension(320, 36));
         userField.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        UIComponents.PlaceholderPasswordField passField = UIComponents.createPasswordField("Password", 15);
-        passField.setMaximumSize(new Dimension(250, 35));
+        UIComponents.PlaceholderPasswordField passField = UIComponents.createPasswordField("Password", 20);
+        passField.setMaximumSize(new Dimension(320, 36));
         passField.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.setBackground(UIComponents.CARD_BG);
-        JButton loginButton = UIComponents.styledButton("Login");
-        JButton backButton = UIComponents.styledButton("Back");
+        JPanel btnRow = new JPanel();
+        btnRow.setBackground(UIComponents.CARD_BG);
+        JButton back = UIComponents.styledButton("Back");
+        JButton login = UIComponents.styledButton("Login");
+        btnRow.add(back);
+        btnRow.add(login);
 
-        buttonPanel.add(backButton);
-        buttonPanel.add(loginButton);
+        card.add(heading);
+        card.add(Box.createVerticalStrut(8));
+        card.add(sub);
+        card.add(Box.createVerticalStrut(18));
+        card.add(userField);
+        card.add(Box.createVerticalStrut(12));
+        card.add(passField);
+        card.add(Box.createVerticalStrut(18));
+        card.add(btnRow);
 
-        loginPanel.add(titleLabel);
-        loginPanel.add(Box.createVerticalStrut(20));
-        loginPanel.add(userField);
-        loginPanel.add(Box.createVerticalStrut(10));
-        loginPanel.add(passField);
-        loginPanel.add(Box.createVerticalStrut(20));
-        loginPanel.add(buttonPanel);
+        root.add(card);
+        frame.setContentPane(root);
 
-        mainPanel.add(loginPanel);
-        frame.setContentPane(mainPanel);
-
-        // Event handlers
-        backButton.addActionListener(e -> {
+        // Actions
+        back.addActionListener(e -> {
             frame.dispose();
             new LandingPage().show();
         });
 
-        loginButton.addActionListener(e -> {
+        login.addActionListener(e -> {
             String username = userField.getRealText();
             String password = passField.getRealPassword();
 
             if (username.isEmpty() || password.isEmpty()) {
-                JOptionPane.showMessageDialog(frame, "Please enter both username and password",
-                        "Missing Fields", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(frame, "Please enter username and password", "Missing", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
             if (UserStore.validateUser(username, password)) {
-                // Set the current user
-                UserStore.setCurrentUser(username);
-
-                JOptionPane.showMessageDialog(frame, "Login successful!", "Success",
-                        JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(frame, "Login successful — welcome " + username + "!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 frame.dispose();
                 new Dashboard(username).show();
             } else {
-                JOptionPane.showMessageDialog(frame, "Invalid username or password",
-                        "Login Failed", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(frame, "Invalid credentials", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 

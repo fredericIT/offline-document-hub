@@ -1,178 +1,209 @@
-import java.io.*;
-import java.nio.file.*;
-import java.text.SimpleDateFormat;
-import java.util.*; // This imports List, ArrayList, HashMap, etc.
-import javax.swing.*;
-import java.awt.Desktop; // Import Desktop specifically
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DocumentManager {
-    private static final String DATA_ROOT = "./data";
-    private static final SimpleDateFormat TS_FMT = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+    private static final Map<Integer, Document> documents = new ConcurrentHashMap<>();
+    private static final Map<String, List<Integer>> userDocuments = new ConcurrentHashMap<>();
+    private static final Map<Integer, List<DownloadRequest>> downloadRequests = new ConcurrentHashMap<>();
+    private static int nextDocumentId = 1;
 
-    public DocumentManager() {
-        ensureDir(DATA_ROOT);
-    }
+    public static class Document {
+        public int id;
+        public String name;
+        public String owner;
+        public long size;
+        public String type;
+        public Date uploadDate;
+        public boolean approved;
+        public String sharedWith; // "all" or specific users
 
-    // Ensure directory exists
-    private void ensureDir(String path) {
-        File f = new File(path);
-        if (!f.exists()) f.mkdirs();
-    }
-
-    // Ensure user folders exist
-    public void ensureUser(String username) {
-        ensureDir(DATA_ROOT + "/" + username + "/files");
-        File req = new File(DATA_ROOT + "/" + username + "/requests.txt");
-        try {
-            if (!req.exists()) req.createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
+        public Document(int id, String name, String owner, long size, String type) {
+            this.id = id;
+            this.name = name;
+            this.owner = owner;
+            this.size = size;
+            this.type = type;
+            this.uploadDate = new Date();
+            this.approved = "admin".equals(owner); // Admin files auto-approved
+            this.sharedWith = "all";
         }
     }
 
-    // Upload file (with confirmation handled in UI). Returns the stored filename path.
-    public Path uploadFile(File src, String owner) throws IOException {
-        ensureUser(owner);
-        Path destDir = Paths.get(DATA_ROOT, owner, "files");
-        String timestamp = TS_FMT.format(new Date());
-        String safeName = timestamp + "_" + src.getName(); // avoid collision
-        Path dest = destDir.resolve(safeName);
-        Files.copy(src.toPath(), dest, StandardCopyOption.REPLACE_EXISTING);
-        return dest;
+    public static class DownloadRequest {
+        public String username;
+        public int documentId;
+        public Date requestDate;
+        public boolean approved;
+
+        public DownloadRequest(String username, int documentId) {
+            this.username = username;
+            this.documentId = documentId;
+            this.requestDate = new Date();
+            this.approved = false;
+        }
     }
 
-    // List files for a user (returns Path list)
-    public java.util.List<Path> listFiles(String owner) {
-        ensureUser(owner);
-        java.util.List<Path> list = new ArrayList<>();
-        Path dir = Paths.get(DATA_ROOT, owner, "files");
-        try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir)) {
-            for (Path p : ds) {
-                if (Files.isRegularFile(p)) list.add(p);
+    static {
+        // Add sample documents for testing
+        addDocument("Project Proposal.docx", "admin", 2457600L, "Word");
+        addDocument("Financial Report Q4.pdf", "admin", 5120000L, "PDF");
+        addDocument("Company Budget.xlsx", "admin", 1843200L, "Excel");
+        addDocument("Team Photo.jpg", "admin", 3145728L, "Image");
+        addDocument("Product Demo.mp4", "admin", 15728640L, "Video");
+        addDocument("Meeting Notes.pdf", "client1", 1024000L, "PDF");
+        addDocument("Research Data.xlsx", "client2", 4096000L, "Excel");
+    }
+
+    public static synchronized int addDocument(String name, String owner, long size, String type) {
+        int id = nextDocumentId++;
+        Document doc = new Document(id, name, owner, size, type);
+        documents.put(id, doc);
+
+        // Add to user's document list
+        userDocuments.computeIfAbsent(owner, k -> new ArrayList<>()).add(id);
+
+        return id;
+    }
+
+    public static List<Document> getUserDocuments(String username) {
+        List<Document> result = new ArrayList<>();
+        List<Integer> userDocIds = userDocuments.get(username);
+        if (userDocIds != null) {
+            for (int docId : userDocIds) {
+                Document doc = documents.get(docId);
+                if (doc != null) {
+                    result.add(doc);
+                }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        // sort by name descending (newest first)
-        list.sort(Comparator.comparing(Path::getFileName).reversed());
-        return list;
+        return result;
     }
 
-    // When someone requests access to a file owned by 'owner', we append a request
-    public void createAccessRequest(String owner, String filename, String requester) throws IOException {
-        ensureUser(owner);
-        String ts = TS_FMT.format(new Date());
-        String line = requester + "|" + filename + "|" + ts + "|PENDING";
-        Path reqFile = Paths.get(DATA_ROOT, owner, "requests.txt");
-        Files.write(reqFile, Collections.singletonList(line), StandardOpenOption.APPEND);
+    public static List<Document> getAllDocuments() {
+        return new ArrayList<>(documents.values());
     }
 
-    // Read pending requests for owner; returns lines (including APPROVED/DENIED if present)
-    public java.util.List<String> readRequests(String owner) {
-        ensureUser(owner);
-        Path reqFile = Paths.get(DATA_ROOT, owner, "requests.txt");
-        try {
-            java.util.List<String> lines = Files.readAllLines(reqFile);
-            return lines;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
+    public static List<Document> getApprovedDocuments() {
+        List<Document> result = new ArrayList<>();
+        for (Document doc : documents.values()) {
+            if (doc.approved) {
+                result.add(doc);
+            }
         }
+        return result;
     }
 
-    // Update a request line at index (approve=true to approve)
-    // If approve -> copy the file from owner->files to requester->files
-    public void processRequest(String owner, int requestIndex, boolean approve) throws IOException {
-        ensureUser(owner);
-        Path reqFile = Paths.get(DATA_ROOT, owner, "requests.txt");
-        java.util.List<String> lines = Files.readAllLines(reqFile);
-        if (requestIndex < 0 || requestIndex >= lines.size()) return;
-        String[] parts = lines.get(requestIndex).split("\\|");
-        if (parts.length < 4) return;
-        String requester = parts[0];
-        String filename = parts[1];
-        String ts = parts[2];
-        String status = parts[3];
+    public static synchronized void requestDownload(String username, int documentId) {
+        DownloadRequest request = new DownloadRequest(username, documentId);
+        downloadRequests.computeIfAbsent(documentId, k -> new ArrayList<>()).add(request);
+    }
 
-        if (!"PENDING".equalsIgnoreCase(status)) {
-            // already processed
-            return;
+    public static List<DownloadRequest> getPendingRequests() {
+        List<DownloadRequest> result = new ArrayList<>();
+        for (List<DownloadRequest> requests : downloadRequests.values()) {
+            for (DownloadRequest request : requests) {
+                if (!request.approved) {
+                    result.add(request);
+                }
+            }
         }
+        return result;
+    }
 
-        String newStatus = approve ? "APPROVED" : "DENIED";
-        parts[3] = newStatus;
-        lines.set(requestIndex, String.join("|", parts));
+    public static synchronized boolean approveDownload(String username, int documentId) {
+        List<DownloadRequest> requests = downloadRequests.get(documentId);
+        if (requests != null) {
+            for (DownloadRequest request : requests) {
+                if (request.username.equals(username) && !request.approved) {
+                    request.approved = true;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
-        // write back
-        Files.write(reqFile, lines, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+    public static synchronized boolean approveDocument(int documentId) {
+        Document doc = documents.get(documentId);
+        if (doc != null && !doc.approved) {
+            doc.approved = true;
+            return true;
+        }
+        return false;
+    }
 
-        if (approve) {
-            // copy file to requester folder
-            ensureUser(requester);
-            Path ownerFile = Paths.get(DATA_ROOT, owner, "files", filename);
-            if (!Files.exists(ownerFile)) {
-                // maybe owner renamed file — can't find; mark denied
-                // update line to DENIED reason
-                parts[3] = "DENIED_FILE_NOT_FOUND";
-                lines.set(requestIndex, String.join("|", parts));
-                Files.write(reqFile, lines, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+    public static Document getDocumentById(int documentId) {
+        return documents.get(documentId);
+    }
+
+    public static int getTotalDocumentCount() {
+        return documents.size();
+    }
+
+    public static long getTotalStorageUsed() {
+        long total = 0;
+        for (Document doc : documents.values()) {
+            total += doc.size;
+        }
+        return total;
+    }
+
+    // NEW: Generate shareable link for documents
+    public static String generateShareableLink(int documentId) {
+        Document doc = documents.get(documentId);
+        if (doc != null && doc.approved) {
+            // In a real implementation, this would be your server URL
+            return "http://localhost:8080/document/" + documentId + "/" + doc.name;
+        }
+        return null;
+    }
+
+    // NEW: Check if user can access document
+    public static boolean canUserAccessDocument(String username, int documentId) {
+        Document doc = documents.get(documentId);
+        if (doc == null) return false;
+
+        // Admin can access all documents
+        if (UserStore.isAdmin(username)) return true;
+
+        // Document owner can access their own documents
+        if (doc.owner.equals(username)) return true;
+
+        // Check if document is shared with this user or with "all"
+        return doc.sharedWith.equals("all") || doc.sharedWith.contains(username);
+    }
+
+    // NEW: Share document with specific user
+    public static synchronized void shareDocumentWithUser(int documentId, String targetUser) {
+        Document doc = documents.get(documentId);
+        if (doc != null) {
+            if (doc.sharedWith.equals("all")) {
+                // Already shared with everyone
                 return;
             }
-            Path dest = Paths.get(DATA_ROOT, requester, "files", filename);
-            Files.copy(ownerFile, dest, StandardCopyOption.REPLACE_EXISTING);
-        }
-    }
 
-    // Helper: parse a request line into a map
-    public static Map<String, String> parseRequestLine(String line) {
-        String[] parts = line.split("\\|");
-        Map<String, String> m = new HashMap<>();
-        m.put("requester", parts.length > 0 ? parts[0] : "");
-        m.put("filename", parts.length > 1 ? parts[1] : "");
-        m.put("timestamp", parts.length > 2 ? parts[2] : "");
-        m.put("status", parts.length > 3 ? parts[3] : "");
-        return m;
-    }
-
-    // Basic file open: simply attempt to open using Desktop (best-effort).
-    public void openFileInDesktop(Path p) {
-        if (p == null || !Files.exists(p)) {
-            JOptionPane.showMessageDialog(null, "File not found: " + (p==null?"":p.toString()));
-            return;
-        }
-        try {
-            if (Desktop.isDesktopSupported()) {
-                Desktop.getDesktop().open(p.toFile());
+            if (doc.sharedWith.isEmpty()) {
+                doc.sharedWith = targetUser;
             } else {
-                JOptionPane.showMessageDialog(null, "Opening files is not supported on this platform.");
+                doc.sharedWith += "," + targetUser;
             }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Cannot open file: " + ex.getMessage());
-        } catch (IllegalArgumentException ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Cannot open file: Invalid file path");
+
+            // Notify the target user
+            NotificationManager.addNotification(targetUser,
+                    "Document Shared",
+                    "Document '" + doc.name + "' has been shared with you",
+                    "share");
         }
     }
 
-    // Additional utility methods that might be needed
-    public static void addDocument(String name, String owner, long size, String type) {
-        // Mock implementation - in real app, this would save to database
-        System.out.println("Document added: " + name + " by " + owner);
-    }
-
-    public static void shareDocumentWithUser(int docId, String username) {
-        // Mock implementation
-        System.out.println("Document " + docId + " shared with " + username);
-    }
-
-    public static String generateShareableLink(int docId) {
-        // Mock implementation
-        return "http://localhost:8080/share/doc/" + docId;
-    }
-
-    public static java.util.List<String> getAllDocuments() {
-        // Mock implementation
-        return new ArrayList<>();
+    // NEW: Get documents shared with user
+    public static List<Document> getDocumentsSharedWithUser(String username) {
+        List<Document> result = new ArrayList<>();
+        for (Document doc : documents.values()) {
+            if (doc.sharedWith.equals("all") || doc.sharedWith.contains(username)) {
+                result.add(doc);
+            }
+        }
+        return result;
     }
 }
